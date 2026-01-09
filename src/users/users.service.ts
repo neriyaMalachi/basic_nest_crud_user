@@ -1,45 +1,28 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class UsersService {
-  private users = [
-    { id: 1, name: 'neriya', email: 'neriya@gmail.com' },
-    { id: 2, name: 'moshe', email: 'moshe@gmail.com' },
-  ];
+  constructor(private readonly prisma: PrismaService) {}
 
   findAll() {
-    return this.users;
+    return this.prisma.user.findMany();
   }
-  findOneByID(id: number) {
-    return this.users.find((u) => u.id === id);
+  async findOneByID(id: number) {
+    const user = await this.prisma.user.findUnique({ where: { id } });
+    if (!user) throw new NotFoundException('User not found');
+    return user;
   }
   create(name: string, email: string) {
-    const newUser = {
-      id: Date.now(),
-      name,
-      email,
-    };
-
-    this.users.push(newUser);
-    return this.users;
+    return this.prisma.user.create({ data: { name, email } });
   }
   updateUser(id: number, name: string, email: string) {
-    const user = this.users.find((u) => u.id === id);
-    if (!user) {
-      return null;
-    }
-    if (user.name) {
-      user.name = name;
-    }
-    if (user.email) {
-      user.email = email;
-    }
-    return this.users;
+    return this.prisma.user.update({
+      where: { id },
+      data: { name, email },
+    });
   }
   deleteUser(id: number) {
-    const newUsersArray = this.users.filter((u) => u.id !== id);
-    this.users = newUsersArray;
-    console.log('users:', this.users);
-    return this.users;
+    return this.prisma.user.delete({ where: { id } });
   }
 }
